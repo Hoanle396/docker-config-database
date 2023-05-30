@@ -1,0 +1,109 @@
+version: "3.9"
+services:
+  mysql-db:
+    image: mysql:8.0
+    restart: unless-stopped
+    container_name: 'mysql-db'
+    environment:
+      MYSQL_DATABASE: "bitkub"
+      MYSQL_ALLOW_EMPTY_PASSWORD: true
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql-db:/var/lib/mysqlv8
+
+  phpmyadmin:
+    image: bitnami/phpmyadmin:latest
+    restart: unless-stopped
+    ports:
+      - 8182:8182
+    environment:
+      - DATABASE_HOST=ec2-13-214-174-5.ap-southeast-1.compute.amazonaws.com
+      - DATABASE_PORT_NUMBER=3306
+      - PMA_ARBITRARY=1
+      - APACHE_HTTP_PORT_NUMBER=8182
+      - DATABASE_USER=dbmasteruser
+      - DATABASE_PASSWORD=123123123
+
+  mongo:
+    image: mongo
+    restart: unless-stopped
+    ports:
+      - 27017:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
+  mongo-express:
+    image: mongo-express
+    restart: unless-stopped
+    expose:
+      - 8081
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
+      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      
+  postgresql-db:
+    image: "postgres:latest"
+    container_name: postgresql-db
+    environment:
+      POSTGRES_USER: hoanle396 
+      POSTGRES_PASSWORD: hoanle396 
+      POSTGRES_DB: iconnect 
+      PGDATA: /var/lib/postgresql/data
+    volumes:
+      - ./db-data/:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin-4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: hoanle396@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: hoanle396
+    ports:
+      - 81:80
+    volumes:
+      - /var/lib/pgadmin
+    links:
+      - "postgresql-db:pgsql-server"  
+    restart: unless-stopped
+
+  zookeeper:
+    image: "confluentinc/cp-zookeeper"
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - kafka-network
+      - notifications-network
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+  kafka:
+    image: "confluentinc/cp-kafka"
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    networks:
+      - kafka-network
+      - notifications-network
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+volumes:
+  mysql-db:
+  mongo:
+networks:
+  kafka-network:
+    driver: bridge
+    name: kafka-network
+  notifications-network:
+    external: true
