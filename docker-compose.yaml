@@ -18,12 +18,12 @@ services:
     ports:
       - 8182:8182
     environment:
-      - DATABASE_HOST=ec2-13-214-174-5.ap-southeast-1.compute.amazonaws.com
+      - DATABASE_HOST=localhost
       - DATABASE_PORT_NUMBER=3306
       - PMA_ARBITRARY=1
       - APACHE_HTTP_PORT_NUMBER=8182
-      - DATABASE_USER=dbmasteruser
-      - DATABASE_PASSWORD=123123123
+      - DATABASE_USER=root
+      - DATABASE_PASSWORD=
 
   mongo:
     image: mongo
