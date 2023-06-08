@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     container_name: 'mysql-db'
     environment:
-      MYSQL_DATABASE: "bitkub"
+      MYSQL_DATABASE: "mysql"
       MYSQL_ALLOW_EMPTY_PASSWORD: true
     ports:
       - '3306:3306'
@@ -73,31 +73,6 @@ services:
     links:
       - "postgresql-db:pgsql-server"  
     restart: unless-stopped
-
-  zookeeper:
-    image: "confluentinc/cp-zookeeper"
-    container_name: zookeeper
-    ports:
-      - "2181:2181"
-    networks:
-      - kafka-network
-      - notifications-network
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-  kafka:
-    image: "confluentinc/cp-kafka"
-    container_name: kafka
-    ports:
-      - "9092:9092"
-    networks:
-      - kafka-network
-      - notifications-network
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 volumes:
   mysql-db:
   mongo:
