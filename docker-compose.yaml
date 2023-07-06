@@ -10,7 +10,7 @@ services:
     ports:
       - '3306:3306'
     volumes:
-      - mysql-db:/var/lib/mysqlv8
+      - mysql-db:/var/lib/mysql
 
   phpmyadmin:
     image: bitnami/phpmyadmin:latest
@@ -18,7 +18,7 @@ services:
     ports:
       - 8182:8182
     environment:
-      - DATABASE_HOST=localhost
+      - DATABASE_HOST=mysql-db
       - DATABASE_PORT_NUMBER=3306
       - PMA_ARBITRARY=1
       - APACHE_HTTP_PORT_NUMBER=8182
@@ -55,7 +55,7 @@ services:
       POSTGRES_DB: iconnect 
       PGDATA: /var/lib/postgresql/data
     volumes:
-      - ./db-data/:/var/lib/postgresql/data/
+      - db-data:/var/lib/postgresql/data/
     ports:
       - "5432:5432"
     restart: unless-stopped
@@ -73,10 +73,54 @@ services:
     links:
       - "postgresql-db:pgsql-server"  
     restart: unless-stopped
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+  redis:
+    image: redis:latest
+    restart: unless-stopped
+    volumes:
+        - redis-data:/var/lib/redis/data
+    networks:
+        - app-network #same network here
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    environment:
+        - REDIS_HOSTS=local:redis:6379
+        - PORT=8001
+    expose:
+        - 8001
+    ports:
+        - "8001:8001"
+    depends_on:
+        - redis
+    networks:
+        - app-network
 volumes:
   mysql-db:
   mongo:
+  db-data:
+  redis-data:
 networks:
+  app-network:
+    driver: bridge
   kafka-network:
     driver: bridge
     name: kafka-network
